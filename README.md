@@ -19,9 +19,9 @@ css/styles.css               Estilos
 js/app.js                    Lógica de arranque, permisos, carga y escena
 js/posters.json              (Fase 2) Configuración de posters
 vendor/                      A-Frame 1.8.0 y MindAR 1.2.5 (sin CDN)
-assets/targets/targets.mind  Targets compilados (PLACEHOLDER: hay que generarlo)
-assets/posters/              Imágenes originales de los posters
-assets/media/                Vídeos, modelos GLB, imágenes animadas
+assets/targets/targets.mind  Targets compilados de todos los posters (PLACEHOLDER: hay que generarlo)
+assets/<poster>/             Todo el contenido de un poster: imagen, vídeos, modelos, imágenes animadas
+docs/                        Documentación del proyecto (artículo de investigación)
 ```
 
 Ver `CLAUDE.md` para versiones, decisiones técnicas y convenciones.

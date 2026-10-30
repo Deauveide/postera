@@ -22,12 +22,48 @@ css/styles.css             Estilos (tokens de color en :root)
 js/app.js                  Arranque, permisos, carga, escena y eventos
 js/posters.json            (Fase 2) Configuración de cada poster
 vendor/                    A-Frame y MindAR (+ licenses/)
-assets/targets/targets.mind  Targets compilados (PLACEHOLDER hasta generar el real)
-assets/posters/            Imágenes originales de los posters (referencia/compilación)
-assets/media/              Vídeos (.mp4), modelos (.glb) e imágenes de animación
+assets/targets/targets.mind  Targets compilados de TODOS los posters (PLACEHOLDER hasta generar el real)
+assets/<poster>/           Todo el contenido de UN poster (ver convención abajo)
+assets/poster-1/           Poster 1 (primer poster real)
+assets/poster-prueba/      Poster y vídeo de prueba de la Fase 1
+docs/                      Documentación del proyecto (artículo de investigación en .docx)
 README.md                  Uso, pruebas, compilación de targets y despliegue
 CLAUDE.md                  Este archivo
 ```
+
+## Convención de assets por poster
+
+- Cada poster tiene **una carpeta** directamente dentro de `assets/`, con todo su contenido: imagen del poster, vídeos, modelos GLB, imágenes animadas.
+- Nombres de carpeta y de archivo en **minúsculas, sin espacios ni símbolos** (`+`, `·`, tildes): dan problemas en URLs. Ejemplo: `poster-1/modelo.glb`, no `Sharp V3 · Multi View.glb`.
+- `targets.mind` no va en la carpeta de un poster: se compila con todos juntos y vive en `assets/targets/`.
+- En `posters.json` (Fase 2), las rutas de los assets apuntarán a esta carpeta.
+- Las carpetas de posters no se mueven ni se renombran sin actualizar `posters.json` y el `targets.mind`.
+
+Estado actual de `assets/poster-1/`:
+
+| Archivo | Original | Uso previsto |
+|---|---|---|
+| `poster.jpg` | Poster Objetivo Nazional (4500×5626, 4:5) | Imagen para compilar el target |
+| `modelo.glb` | Sharp V3 · Multi View · Highest 3D model (originalmente 59 MB, ahora 2,9 MB) | Modelo (tipo `model`). **No tiene animaciones**: ver nota abajo |
+| `texto-nazi.png` | Texto nazi (2209×672) | Imagen animada (tipo `image`) |
+| `fenismo.png` | fenismo (1024×1024) | Imagen animada (tipo `image`) |
+| `lgbtiq.png` | lgbtiq+ (1024×1024) | Imagen animada (tipo `image`) |
+
+El uso de cada archivo en la animación lo define `posters.json` (Fase 2): estos usos son una suposición hasta confirmarlo.
+
+### Optimización de `modelo.glb` (59 MB → 2,9 MB)
+
+- **Revisión:** una sola malla de ~1 M de vértices (escaneo denso), 3 texturas de 2048×2048 (JPG/PNG), **0 animaciones**, 1 nodo, sin skins.
+- **Cambios aplicados** con `@gltf-transform/cli` 4.5.1 (`optimize`): simplificación de malla al 25 % (`--simplify-ratio 0.25`, error 0.01), texturas a 1024 px en WebP, compresión **meshopt** y cuantización de atributos. El original sigue en `POSTERA.zip`.
+- **Verificado en navegador** (A-Frame 1.8.0): carga en ~0,5 s y el aspecto visual frente al original es el mismo a tamaño de pantalla completa. No se ha revisado un zoom de detalle.
+- **Decodificador meshopt:** A-Frame no incluye el decodificador y el GLB no carga sin él (`setMeshoptDecoder must be called…`). Se usa `vendor/meshopt_decoder.js` (módulo de three.js r184 convertido a script clásico, MIT, licencia en `vendor/licenses/meshopt-LICENSE.md`). Se configura una vez en la escena (`gltf-model="meshoptDecoderPath: vendor/meshopt_decoder.js"`) en `js/app.js`.
+- **Descartado:** `quantize` sin meshopt pesa 11 MB al 25 %, mucho más que meshopt.
+- **Pendiente:** el modelo no tiene animación. Si el poster necesita animación, hay que crearla en el DCC y reexportar, o decidir una animación en código (rotación, flotación) para tipo `model`. Confirmar con el usuario.
+
+## Contexto del proyecto
+
+- `docs/` contiene el artículo de investigación *"Diferencias en la efectividad comunicativa entre un póster convencional y uno que incorpora realidad aumentada"* (Institución Universitaria de Roldanillo, UNINTEP). Compara un póster estático con uno con RA, con un grupo focal de estudiantes.
+- El poster y la experiencia forman parte de esa investigación: los cambios de contenido conviene anotarlos.
 
 ## Decisiones tomadas (Fase 1)
 
@@ -43,7 +79,7 @@ CLAUDE.md                  Este archivo
 - **Renderer:** un solo renderer, sin antialias, `alpha: true`, `mediump`, pixel ratio máximo 2. Sin sombras ni luces en Fase 1.
 - **Recargar la página** es el "reintentar" del error: es la forma más fiable de liberar cámara y escena en iOS/Android.
 - **Formato de los posters:** 1080×1350 px (proporción **4:5**). Impresión tamaño carta recortada; puede haber impresiones mayores (SuperB) con la misma proporción. Como la escala es relativa al ancho del poster, el tamaño impreso no cambia la configuración.
-- **Test de Fase 1:** `assets/media/video-prueba.mp4` (H.264, 720×900 = 4:5, 8 s, muted) y `assets/posters/poster-prueba.png` (1080×1350, generado para pruebas). Ninguno es el contenido final.
+- **Test de Fase 1:** `assets/poster-prueba/video.mp4` (H.264, 720×900 = 4:5, 8 s, muted) y `assets/poster-prueba/poster.png` (1080×1350, generado para pruebas). Ninguno es el contenido final.
 - **Número de posters:** unos 6. Empezar con `maxTrack: 1`; revisar si hace falta más al probar.
 
 ## Convenciones de código
@@ -69,7 +105,7 @@ Comprobar que los archivos clave responden:
 ```bash
 curl -I http://localhost:3000/vendor/aframe-1.8.0.min.js
 curl -I http://localhost:3000/assets/targets/targets.mind
-curl -I -H "Range: bytes=0-1023" http://localhost:3000/assets/media/video-prueba.mp4   # debe devolver 206
+curl -I -H "Range: bytes=0-1023" http://localhost:3000/assets/poster-prueba/video.mp4   # debe devolver 206
 ```
 
 Comprobar la versión de las librerías en npm (antes de actualizar):

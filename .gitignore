@@ -10,3 +10,6 @@ scratch-*.png
 Thumbs.db
 .DS_Store
 node_modules/
+
+# Copias comprimidas de los materiales (duplican las carpetas)
+*.zip

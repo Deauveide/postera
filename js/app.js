@@ -36,7 +36,7 @@ const POSTERS = [
     targetIndex: 0,                  // posición de este poster dentro de targets.mind
     titulo: 'Poster de prueba',
     tipo: 'video',
-    ruta: 'assets/media/video-prueba.mp4',
+    ruta: 'assets/poster-prueba/video.mp4',
     escala: 1.0,                     // ancho del vídeo = ancho del poster (1 unidad de MindAR)
     posicion: '0 0 0.01',            // x y z relativos al centro del poster
     rotacion: '0 0 0',
@@ -210,6 +210,9 @@ function crearEscena(medios) {
   // Escena que ocupa su contenedor y sin botones nativos de VR/AR
   escena.setAttribute('embedded', '');
   escena.setAttribute('xr-mode-ui', { enabled: false });
+  // Decodificador local para los GLB comprimidos con meshopt (sin CDN).
+  // Es una opción del sistema gltf-model, así que va en la escena, no en cada modelo.
+  escena.setAttribute('gltf-model', 'meshoptDecoderPath: vendor/meshopt_decoder.js');
   // Evita el permiso de orientación del dispositivo que iOS muestra al cargar A-Frame
   escena.setAttribute('device-orientation-permission-ui', { enabled: false });
 
