@@ -1,0 +1,171 @@
+/* ==========================================================
+   styles.css — estilos de la experiencia AR de posters
+   Tema oscuro fijo: la cámara y los overlays se leen mejor así.
+   ========================================================== */
+
+/* Colores como tokens: cambiarlos aquí cambia toda la app */
+:root {
+  --color-fondo: #0f1222;        /* fondo general */
+  --color-texto: #f5f7ff;        /* texto principal (contraste > 15:1 sobre el fondo) */
+  --color-secundario: #c5cbe0;   /* texto secundario (contraste > 9:1 sobre el fondo) */
+  --color-acento: #ffb84d;       /* botones y spinner */
+  --color-acento-texto: #1a1a1a; /* texto sobre el acento (contraste > 10:1) */
+  --color-error: #ff9a9a;        /* títulos de error (contraste > 8:1) */
+  --margen-lateral: 16px;        /* gutter mínimo en móvil */
+}
+
+/* El atributo hidden debe ganar siempre a las clases de display */
+[hidden] {
+  display: none !important;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  height: 100%;
+  background: var(--color-fondo);
+  color: var(--color-texto);
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  overflow: hidden;            /* sin scroll horizontal ni vertical en la experiencia */
+  overscroll-behavior: none;
+  -webkit-text-size-adjust: 100%;
+}
+
+/* ---------- Capas de pantalla completa ---------- */
+.pantalla {
+  position: fixed;
+  inset: 0;
+  z-index: 20;                 /* por encima de la escena AR */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--margen-lateral);
+  background: var(--color-fondo);
+}
+
+/* La carga se superpone a la cámara ya abierta, así que es semitransparente */
+#estado-carga {
+  background: rgba(15, 18, 34, 0.85);
+}
+
+.tarjeta {
+  width: 100%;
+  max-width: 420px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  text-align: center;
+}
+
+.icono {
+  width: 96px;
+  height: 96px;
+}
+
+h1 {
+  margin: 0;
+  font-size: 1.75rem;
+  line-height: 1.2;
+}
+
+h2 {
+  margin: 0;
+  font-size: 1.4rem;
+  color: var(--color-error);
+}
+
+p {
+  margin: 0;
+  line-height: 1.5;
+  color: var(--color-secundario);
+}
+
+.nota {
+  font-size: 0.9rem;
+}
+
+/* ---------- Botón principal (área táctil >= 52px) ---------- */
+.boton-principal {
+  appearance: none;
+  border: 0;
+  border-radius: 12px;
+  min-height: 52px;
+  padding: 14px 24px;
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--color-acento-texto);
+  background: var(--color-acento);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.boton-principal:focus-visible {
+  outline: 3px solid #ffffff;
+  outline-offset: 3px;
+}
+
+.boton-principal:active {
+  transform: scale(0.98);
+}
+
+/* ---------- Indicador de carga ---------- */
+.spinner {
+  width: 48px;
+  height: 48px;
+  border: 4px solid rgba(255, 255, 255, 0.2);
+  border-top-color: var(--color-acento);
+  border-radius: 50%;
+  animation: girar 0.9s linear infinite;
+}
+
+@keyframes girar {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .spinner {
+    animation-duration: 3s;    /* sigue indicando actividad, sin dar vueltas rápidas */
+  }
+}
+
+/* ---------- Escena AR ---------- */
+#contenedor-ar {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  background: #000;
+  overflow: hidden;
+}
+
+/* La escena ocupa su contenedor (atributo embedded de A-Frame) */
+#contenedor-ar a-scene {
+  width: 100%;
+  height: 100%;
+}
+
+/* Vídeos fuera de la vista, pero sin display:none (Safari pausa lo que no se renderiza) */
+#medios {
+  position: fixed;
+  left: 0;
+  top: 0;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+/* Ocultamos la UI de A-Frame que no usamos (botón de VR/AR nativo) */
+.a-enter-vr,
+.a-loader-title {
+  display: none !important;
+}

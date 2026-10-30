@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <!-- Viewport sin zoom para que la experiencia AR ocupe toda la pantalla -->
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+  <meta name="description" content="Apunta la cámara a un poster impreso y mira cómo cobra vida en realidad aumentada.">
+  <meta name="theme-color" content="#0f1222">
+  <!-- Icono en línea: evita una petición 404 a /favicon.ico -->
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect x='14' y='8' width='36' height='48' rx='4' fill='none' stroke='%23ffb84d' stroke-width='3'/%3E%3C/svg%3E">
+  <title>Posters animados AR</title>
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+
+  <!-- ============ Pantalla de inicio ============
+       La cámara NO se activa hasta que el usuario pulsa el botón. -->
+  <main id="pantalla-inicio" class="pantalla">
+    <div class="tarjeta">
+      <!-- Texto alternativo del icono decorativo para lectores de pantalla -->
+      <svg class="icono" viewBox="0 0 64 64" role="img" aria-label="Icono de un poster con una marca de realidad aumentada">
+        <rect x="14" y="8" width="36" height="48" rx="4" fill="none" stroke="#ffb84d" stroke-width="3"/>
+        <path d="M24 30 L30 36 L42 24" fill="none" stroke="#ffb84d" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+        <circle cx="32" cy="46" r="2.5" fill="#ffb84d"/>
+      </svg>
+
+      <h1>Posters animados</h1>
+      <p>Pulsa el botón, permite el acceso a la cámara y apunta a un poster impreso para ver su animación.</p>
+
+      <button id="btn-iniciar" class="boton-principal" type="button">Iniciar experiencia</button>
+
+      <p class="nota">Necesitas HTTPS, una cámara y Safari en iOS o Chrome en Android.</p>
+    </div>
+  </main>
+
+  <!-- ============ Estado de carga ============ -->
+  <div id="estado-carga" class="pantalla" role="status" aria-live="polite" hidden>
+    <div class="tarjeta">
+      <div class="spinner" aria-hidden="true"></div>
+      <p id="texto-carga">Preparando la cámara…</p>
+    </div>
+  </div>
+
+  <!-- ============ Estado de error ============ -->
+  <div id="estado-error" class="pantalla" role="alert" hidden>
+    <div class="tarjeta">
+      <h2>No se pudo iniciar</h2>
+      <p id="texto-error"></p>
+      <button id="btn-reintentar" class="boton-principal" type="button">Volver a intentar</button>
+    </div>
+  </div>
+
+  <!-- Contenedor donde app.js crea la escena A-Frame + MindAR -->
+  <div id="contenedor-ar"></div>
+
+  <!-- Vídeos de los posters: viven fuera de la vista pero deben seguir reproduciéndose -->
+  <div id="medios" aria-hidden="true"></div>
+
+  <!-- Librerías locales (sin CDN) -->
+  <script src="vendor/aframe-1.8.0.min.js"></script>
+  <script src="vendor/mindar-image-aframe-1.2.5.prod.js"></script>
+  <script src="js/app.js" defer></script>
+</body>
+</html>

@@ -1,0 +1,12 @@
+# Entorno de Claude Code (local, no es del proyecto)
+.claude/
+
+# Capturas y salidas de pruebas
+*.png.tmp
+.playwright-mcp/
+scratch-*.png
+
+# Sistema
+Thumbs.db
+.DS_Store
+node_modules/

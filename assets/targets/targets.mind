@@ -1,0 +1,11 @@
+PLACEHOLDER
+Este archivo NO es un targets.mind real. Es un marcador de posición para que la estructura del proyecto esté completa.
+
+Para generar el archivo real con tus posters:
+  1. Abre la herramienta de compilación de MindAR:
+     https://hiukim.github.io/mind-ar-js-doc/tools/compile
+  2. Sube las imágenes de los posters (en el mismo orden que en js/posters.json).
+  3. Descarga el archivo generado (targets.mind) y reemplaza este archivo.
+
+La app detecta esta cabecera ("PLACEHOLDER") y muestra un aviso en lugar de intentar cargarlo.
+Más detalles en README.md, sección "Compilar los targets".
