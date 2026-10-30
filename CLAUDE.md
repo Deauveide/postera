@@ -20,7 +20,7 @@ Web de realidad aumentada: el usuario apunta la cámara a un poster impreso y ap
 index.html                 Pantalla de inicio, estados de carga/error, contenedores
 css/styles.css             Estilos (tokens de color en :root)
 js/app.js                  Arranque, permisos, carga, escena y eventos
-js/posters.json            (Fase 2) Configuración de cada poster
+js/posters.json            Configuración de posters y filtros de MindAR (ver sección abajo)
 vendor/                    A-Frame y MindAR (+ licenses/)
 assets/targets/targets.mind  Targets compilados de TODOS los posters (PLACEHOLDER hasta generar el real)
 assets/<poster>/           Todo el contenido de UN poster (ver convención abajo)
@@ -36,7 +36,7 @@ CLAUDE.md                  Este archivo
 - Cada poster tiene **una carpeta** directamente dentro de `assets/`, con todo su contenido: imagen del poster, vídeos, modelos GLB, imágenes animadas.
 - Nombres de carpeta y de archivo en **minúsculas, sin espacios ni símbolos** (`+`, `·`, tildes): dan problemas en URLs. Ejemplo: `poster-1/modelo.glb`, no `Sharp V3 · Multi View.glb`.
 - `targets.mind` no va en la carpeta de un poster: se compila con todos juntos y vive en `assets/targets/`.
-- En `posters.json` (Fase 2), las rutas de los assets apuntarán a esta carpeta.
+- Las rutas de `posters.json` apuntan a esta carpeta.
 - Las carpetas de posters no se mueven ni se renombran sin actualizar `posters.json` y el `targets.mind`.
 
 Estado actual de `assets/poster-1/`:
@@ -49,7 +49,7 @@ Estado actual de `assets/poster-1/`:
 | `fenismo.png` | fenismo (1024×1024) | Imagen animada (tipo `image`) |
 | `lgbtiq.png` | lgbtiq+ (1024×1024) | Imagen animada (tipo `image`) |
 
-El uso de cada archivo en la animación lo define `posters.json` (Fase 2): estos usos son una suposición hasta confirmarlo.
+El uso de cada archivo en la animación lo define `posters.json`: estos usos son una suposición hasta confirmarlo.
 
 ### Optimización de `modelo.glb` (59 MB → 2,9 MB)
 
@@ -64,6 +64,27 @@ El uso de cada archivo en la animación lo define `posters.json` (Fase 2): estos
 
 - `docs/` contiene el artículo de investigación *"Diferencias en la efectividad comunicativa entre un póster convencional y uno que incorpora realidad aumentada"* (Institución Universitaria de Roldanillo, UNINTEP). Compara un póster estático con uno con RA, con un grupo focal de estudiantes.
 - El poster y la experiencia forman parte de esa investigación: los cambios de contenido conviene anotarlos.
+
+## Configuración: js/posters.json
+
+- `maxTrack`: posters que MindAR sigue a la vez.
+- `filtro`: ajustes de MindAR **de toda la escena** (no por poster; MindAR 1.2.5 no lo permite).
+  - `filterMinCF`: menor = menos temblor en reposo, más retraso al moverse despacio.
+  - `filterBeta`: mayor = menos retraso al moverse rápido.
+  - `missTolerance`, `warmupTolerance`: frames que el poster se mantiene al perderlo / al encontrarlo. `-1` = valor por defecto de MindAR.
+- `posters[]`: cada poster tiene `id` (minúsculas y guiones), `targetIndex` (único, orden en `targets.mind`), `titulo`, `imagen` (para el modo sin cámara), `tipo`, `ruta`, `escala` (ancho en unidades de MindAR), `posicion`, `rotacion`, `loop` (vídeo) y `animacion` (`ninguna`, `flotar` o `pulsar`, solo para `image`).
+- Tipos:
+  - `video`: vídeo H.264 con fade y pausa al perder el poster.
+  - `image`: PNG con transparencia; `flotar` o `pulsar` en bucle.
+  - `model`: GLB. Se carga la primera vez que aparece el poster. Reproduce todos sus clips en bucle con el componente `reproducir-clips` (A-Frame 1.8 no trae `animation-mixer`).
+- `js/app.js` valida la configuración al arrancar. Un error de validación muestra un aviso y lista los campos en la consola.
+
+## Modos y depuración
+
+- **Sin cámara:** `?modo=sin-camara` (también desde los botones de inicio y de error). Muestra cada poster con su imagen y su vídeo.
+- **Debug:** `?debug=1` muestra el FPS de A-Frame (`<a-scene stats>`) y registra en consola cada detección y pérdida con su hora.
+- **No usar `showStats` de MindAR:** en 1.2.5 necesita una variable global `Stats` que el bundle no incluye, y la escena no llega a arrancar.
+- **`prefers-reduced-motion`:** se desactivan los fades largos y las animaciones en bucle de `image`.
 
 ## Decisiones tomadas (Fase 1)
 
@@ -118,7 +139,9 @@ npm view mind-ar version
 
 ## Pendiente
 
-- **Fase 2:** mover la configuración de `app.js` a `js/posters.json` y generar varios posters y tipos (`model`, `image`).
+- **Posters 2 a 6:** añadir cada uno a `posters.json` cuando estén sus assets y su target compilado (el `.mind` se compila con todos, en el orden de `targetIndex`).
+- **Fase 3:** overlays "Ver más" y pulido visual.
+- **Medición (punto 7 de la lista de mejoras):** no implementada. Antes hay que definir qué se mide, con quién y con consentimiento.
 - **Fase 3:** mensajes de error completos, overlays "Ver más", pulido visual.
 - **Fase 4:** optimización de peso, README final y guía de despliegue (GitHub Pages y WordPress con iframe `allow="camera; autoplay"`).
 - **targets.mind real:** el archivo actual es un PLACEHOLDER. El usuario debe generarlo con sus imágenes reales (ver README).

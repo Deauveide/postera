@@ -72,9 +72,18 @@ Reglas:
 
 El paquete `mind-ar` incluye `src/image-target/offline-compiler.js`, que en principio permite compilar desde Node. Depende de los paquetes `canvas` y `@tensorflow/tfjs`. **Todavía no está probado en este proyecto**, así que no lo uses como fuente fiable. Se evaluará en la Fase 4.
 
-## Añadir un poster (Fase 1)
+## Añadir un poster
 
-Por ahora, el poster de prueba se configura en la constante `POSTERS` de `js/app.js`. En la Fase 2 esa configuración pasará a `js/posters.json`, donde cada poster tendrá su `id`, `targetIndex`, tipo de contenido, ruta del asset, escala, posición y rotación.
+1. Copia los assets a `assets/<id-del-poster>/` (nombres en minúsculas, sin espacios).
+2. Compila el target del poster junto con los demás (ver "Compilar los targets") y pon el poster en la posición que le corresponda en `targets.mind`.
+3. Añade su entrada en `js/posters.json`, con el mismo `targetIndex`. Los campos están descritos en `CLAUDE.md`.
+4. Prueba en local: `npx serve -l 3000 .` y abre `http://localhost:3000/?debug=1`.
+
+## Modos de la página
+
+- `/` — inicio. Con cámara, el botón "Iniciar experiencia".
+- `/?modo=sin-camara` — los posters sin cámara (imagen y vídeo).
+- `/?debug=1` — muestra los FPS y registra en consola cada detección y pérdida con su hora.
 
 ## Despliegue
 

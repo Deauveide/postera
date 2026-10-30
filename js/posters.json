@@ -1,0 +1,24 @@
+{
+  "maxTrack": 1,
+  "filtro": {
+    "filterMinCF": 0.001,
+    "filterBeta": 1000,
+    "missTolerance": -1,
+    "warmupTolerance": -1
+  },
+  "posters": [
+    {
+      "id": "poster-1",
+      "targetIndex": 0,
+      "titulo": "Poster 1",
+      "imagen": "assets/poster-1/poster.jpg",
+      "tipo": "video",
+      "ruta": "assets/poster-prueba/video.mp4",
+      "escala": 1,
+      "posicion": "0 0 0.01",
+      "rotacion": "0 0 0",
+      "loop": true,
+      "animacion": "ninguna"
+    }
+  ]
+}

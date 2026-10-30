@@ -28,6 +28,7 @@
       <p>Pulsa el botón, permite el acceso a la cámara y apunta a un poster impreso para ver su animación.</p>
 
       <button id="btn-iniciar" class="boton-principal" type="button">Iniciar experiencia</button>
+      <button id="btn-sin-camara" class="boton-secundario" type="button">Ver los posters sin cámara</button>
 
       <p class="nota">Necesitas HTTPS, una cámara y Safari en iOS o Chrome en Android.</p>
     </div>
@@ -47,8 +48,20 @@
       <h2>No se pudo iniciar</h2>
       <p id="texto-error"></p>
       <button id="btn-reintentar" class="boton-principal" type="button">Volver a intentar</button>
+      <button id="btn-sin-camara-error" class="boton-secundario" type="button" hidden>Ver los posters sin cámara</button>
     </div>
   </div>
+
+  <!-- ============ Modo sin cámara ============
+       Muestra cada poster con su imagen y su vídeo, sin AR. app.js rellena la lista. -->
+  <main id="modo-sin-camara" class="pantalla pantalla-scroll" hidden>
+    <div class="contenido-scroll">
+      <h1>Posters sin cámara</h1>
+      <p>Así se ven los posters. Para ver la animación sobre el poster impreso, vuelve al inicio y usa la cámara.</p>
+      <div id="lista-sin-camara" class="lista-sin-camara"></div>
+      <button id="btn-volver-inicio" class="boton-secundario" type="button">Volver al inicio</button>
+    </div>
+  </main>
 
   <!-- Contenedor donde app.js crea la escena A-Frame + MindAR -->
   <div id="contenedor-ar"></div>

@@ -169,3 +169,73 @@ p {
 .a-loader-title {
   display: none !important;
 }
+
+/* ---------- Botón secundario (sin cámara) ---------- */
+.boton-secundario {
+  appearance: none;
+  min-height: 48px;
+  padding: 12px 20px;
+  border: 2px solid var(--color-acento);
+  border-radius: 12px;
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--color-acento);
+  background: transparent;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.boton-secundario:focus-visible {
+  outline: 3px solid #ffffff;
+  outline-offset: 3px;
+}
+
+/* ---------- Modo sin cámara: contenido desplazable ---------- */
+.pantalla-scroll {
+  display: block;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.contenido-scroll {
+  width: 100%;
+  max-width: 720px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  text-align: center;
+  align-items: center;
+  padding-bottom: 24px;
+}
+
+.lista-sin-camara {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.tarjeta-poster {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  align-items: center;
+}
+
+.tarjeta-poster img,
+.tarjeta-poster video {
+  width: 100%;
+  height: auto;
+  border-radius: 8px;
+}
+
+.nota-poster {
+  font-size: 0.9rem;
+}
+
+.tarjeta-poster h2 {
+  font-size: 1.2rem;
+  color: var(--color-texto);
+}
