@@ -216,13 +216,9 @@ function crearEscena(medios) {
   // Evita el permiso de orientación del dispositivo que iOS muestra al cargar A-Frame
   escena.setAttribute('device-orientation-permission-ui', { enabled: false });
 
-  // Un solo renderer, sin antialias (ahorro en móviles); alpha para ver la cámara detrás
-  escena.setAttribute('renderer', {
-    antialias: false,
-    alpha: true,
-    colorManagement: true,
-    precision: 'mediump',
-  });
+  // Un solo renderer, sin antialias (ahorro en móviles); alpha para ver la cámara detrás.
+  // Sintaxis de cadena: precision admite solo high | medium | low (no "mediump").
+  escena.setAttribute('renderer', 'antialias: false; alpha: true; colorManagement: true; precision: medium');
 
   // MindAR: un targets.mind para todos los posters, filtrado configurable.
   // Desactivamos sus pantallas propias (uiLoading/uiScanning/uiError): usamos las nuestras.
@@ -250,6 +246,13 @@ function crearEscena(medios) {
     const detalle = evento.detail && evento.detail.error;
     mostrarError(errorApp(detalle === 'VIDEO_FAIL' ? 'CAMARA_FALLO' : 'GENERICO'));
   });
+
+  // Cámara explícita: MindAR busca un <a-camera> para ajustar el campo de visión
+  // a la cámara real. Sin ella, arReady nunca se dispara.
+  const camara = document.createElement('a-camera');
+  camara.setAttribute('position', '0 0 0');
+  camara.setAttribute('look-controls', 'enabled: false');
+  escena.appendChild(camara);
 
   medios.forEach(({ poster, video }) => escena.appendChild(crearPoster(poster, video)));
 

@@ -74,9 +74,10 @@ El uso de cada archivo en la animación lo define `posters.json` (Fase 2): estos
 - **Escala:** 1 unidad de A-Frame = ancho del poster (así lo muestran los ejemplos de MindAR). **Confirmar en la prueba** con un poster real.
 - **Transiciones:** al encontrar el poster, fade-in de 400 ms y `play()`. Al perderlo, fade-out de 300 ms y `pause()`.
 - **UI nativa de MindAR desactivada** (`uiLoading`, `uiScanning`, `uiError` = `no`). Usamos nuestras pantallas.
+- **`<a-camera>` obligatoria:** MindAR busca un `<a-camera>` dentro de la escena para ajustar el campo de visión (`_resize`). Sin ella, `arReady` nunca se dispara y la app se queda en la carga hasta el timeout. Está en `crearEscena()`.
 - **Filtrado MindAR** en `CONFIG.filtro` de `app.js`: `filterMinCF = 0.001`, `filterBeta = 1000` (valores por defecto de MindAR, documentados allí).
 - **`maxTrack`** = 1 (un poster visible a la vez). Subirlo solo si se necesitan varios a la vez.
-- **Renderer:** un solo renderer, sin antialias, `alpha: true`, `mediump`, pixel ratio máximo 2. Sin sombras ni luces en Fase 1.
+- **Renderer:** un solo renderer, sin antialias, `alpha: true`, `precision: medium` (no `mediump`), pixel ratio máximo 2. Sin sombras ni luces en Fase 1.
 - **Recargar la página** es el "reintentar" del error: es la forma más fiable de liberar cámara y escena en iOS/Android.
 - **Formato de los posters:** 1080×1350 px (proporción **4:5**). Impresión tamaño carta recortada; puede haber impresiones mayores (SuperB) con la misma proporción. Como la escala es relativa al ancho del poster, el tamaño impreso no cambia la configuración.
 - **Test de Fase 1:** `assets/poster-prueba/video.mp4` (H.264, 720×900 = 4:5, 8 s, muted) y `assets/poster-prueba/poster.png` (1080×1350, generado para pruebas). Ninguno es el contenido final.
