@@ -2,7 +2,7 @@
 
 Apunta la cámara del móvil a un poster impreso y mira cómo cobra vida. Todo corre en el navegador, sin backend.
 
-> **Estado: Fase 1.** Estructura, pantalla de inicio y una escena AR con un poster y un vídeo de prueba.
+> **Estado:** dos posters reales con vídeo (poster-1 y poster-2). La experiencia arranca sola al abrir la página, sin botón de inicio.
 > Los apartados de despliegue completos llegan en la Fase 4.
 
 ## Requisitos
@@ -14,13 +14,14 @@ Apunta la cámara del móvil a un poster impreso y mira cómo cobra vida. Todo c
 ## Estructura
 
 ```
-index.html                   Pantalla de inicio y estados
+index.html                   Estados de carga y error, capa sobre la cámara
 css/styles.css               Estilos
 js/app.js                    Lógica de arranque, permisos, carga y escena
-js/posters.json              (Fase 2) Configuración de posters
+js/posters.json              Configuración de posters
 vendor/                      A-Frame 1.8.0 y MindAR 1.2.5 (sin CDN)
-assets/targets/targets.mind  Targets compilados de todos los posters (PLACEHOLDER: hay que generarlo)
-assets/<poster>/             Todo el contenido de un poster: imagen, vídeos, modelos, imágenes animadas
+assets/targets/targets.mind  Targets compilados de todos los posters (poster-1 = 0, poster-2 = 1)
+assets/<poster>/             Todo el contenido de un poster: poster.jpg (1080×1350) y video.mp4
+assets/_originales/          Originales pesados (no se suben a git)
 docs/                        Documentación del proyecto (artículo de investigación)
 ```
 
@@ -35,7 +36,7 @@ Ver `CLAUDE.md` para versiones, decisiones técnicas y convenciones.
    npx serve -l 3000 .
    ```
 
-3. Abre `http://localhost:3000` en el ordenador. La página carga, pero la cámara solo funciona si el poster `targets.mind` ya es real (ver "Compilar los targets").
+3. Abre `http://localhost:3000` en el ordenador. La página pide la cámara nada más abrirse; apunta a uno de los posters (impreso o en otra pantalla).
 
 ## Probar desde el móvil (HTTPS)
 
@@ -53,11 +54,11 @@ Abre en el móvil la URL `https://...trycloudflare.com` que muestra la terminal.
 
 ## Compilar los targets
 
-El archivo `assets/targets/targets.mind` contiene el reconocimiento de **todos** los posters. Hoy es un **PLACEHOLDER** que la app detecta y explica. Hay que reemplazarlo con uno real.
+El archivo `assets/targets/targets.mind` contiene el reconocimiento de **todos** los posters. Hay que recompilarlo cada vez que se añade o cambia un poster. Si alguna vez se sustituye por un placeholder, la app lo detecta y lo explica.
 
 Reglas:
 
-- Las imágenes deben ser las **mismas** que se imprimen (mismo recorte, misma proporción).
+- Las imágenes deben ser las **mismas** que se imprimen (mismo recorte, misma proporción). Usa los `poster.jpg` de 1080×1350: compila más rápido y el archivo pesa menos que con los originales de 4500 px.
 - El **orden** de compilación debe coincidir con `targetIndex` de cada poster en la configuración. El poster 0 es el primero que subas, el 1 el segundo, y así.
 - Usa imágenes con mucho detalle y contraste. Las superficies lisas o repetitivas se detectan mal.
 
@@ -74,14 +75,19 @@ El paquete `mind-ar` incluye `src/image-target/offline-compiler.js`, que en prin
 
 ## Añadir un poster
 
-1. Copia los assets a `assets/<id-del-poster>/` (nombres en minúsculas, sin espacios).
+1. Copia los assets a `assets/<id-del-poster>/` (nombres en minúsculas, sin espacios). Deja los originales en `assets/_originales/`. Para el vídeo, recodifícalo a 720 px con el índice al principio, para que empiece al instante:
+
+   ```bash
+   ffmpeg -i original.mp4 -vf scale=720:-2 -c:v libx264 -profile:v high -crf 25 -g 30 -pix_fmt yuv420p -c:a aac -b:a 128k -movflags +faststart video.mp4
+   ```
+
 2. Compila el target del poster junto con los demás (ver "Compilar los targets") y pon el poster en la posición que le corresponda en `targets.mind`.
 3. Añade su entrada en `js/posters.json`, con el mismo `targetIndex`. Los campos están descritos en `CLAUDE.md`.
 4. Prueba en local: `npx serve -l 3000 .` y abre `http://localhost:3000/?debug=1`.
 
 ## Modos de la página
 
-- `/` — inicio. Con cámara, el botón "Iniciar experiencia".
+- `/` — la experiencia con cámara arranca sola. El sonido se activa con el primer toque o con el botón "Activar sonido".
 - `/?modo=sin-camara` — los posters sin cámara (imagen y vídeo).
 - `/?debug=1` — muestra los FPS y registra en consola cada detección y pérdida con su hora.
 

@@ -170,6 +170,35 @@ p {
   display: none !important;
 }
 
+/* ---------- Capa sobre la cámara: aviso de escaneo y botón de sonido ---------- */
+#capa-ar {
+  position: fixed;
+  inset: 0;
+  z-index: 10;                 /* sobre la escena, bajo las pantallas de carga y error */
+  pointer-events: none;        /* los toques pasan a la página (y activan el sonido) */
+}
+
+.aviso-escaneo {
+  position: absolute;
+  left: var(--margen-lateral);
+  right: var(--margen-lateral);
+  bottom: calc(24px + env(safe-area-inset-bottom));
+  margin: 0 auto;
+  max-width: 360px;
+  padding: 12px 16px;
+  border-radius: 12px;
+  text-align: center;
+  color: var(--color-texto);
+  background: rgba(15, 18, 34, 0.75);
+}
+
+.boton-sonido {
+  position: absolute;
+  top: calc(16px + env(safe-area-inset-top));
+  right: var(--margen-lateral);
+  pointer-events: auto;
+}
+
 /* ---------- Botón secundario (sin cámara) ---------- */
 .boton-secundario {
   appearance: none;

@@ -16,6 +16,8 @@ const AJUSTES = {
 const TIPOS = ['video', 'image', 'model'];
 const ANIMACIONES = ['ninguna', 'flotar', 'pulsar'];
 const MOVIMIENTO_REDUCIDO = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+// Alto/ancho de los posters (1080×1350 = 4:5). Solo se usa mientras llega el tamaño real del vídeo.
+const PROPORCION_POSTER = 1350 / 1080;
 
 // Mensajes para el usuario según el código de error
 const MENSAJES = {
@@ -63,55 +65,52 @@ const $ = (id) => document.getElementById(id);
 const MODO_DEBUG = new URLSearchParams(location.search).get('debug') === '1';
 const MODO_SIN_CAMARA = new URLSearchParams(location.search).get('modo') === 'sin-camara';
 
-let escena = null;          // <a-scene> creada al pulsar el botón
-let temporizadorAr = null;  // límite de tiempo mientras MindAR arranca
+let escena = null;              // <a-scene> creada al arrancar
+let temporizadorAr = null;      // límite de tiempo mientras MindAR arranca
+let medios = [];                // { poster, video } de cada poster de tipo "video"
+let sonidoActivado = false;     // el audio necesita un toque del usuario (regla de los navegadores)
+const postersVisibles = new Set();
 
-// Se carga al abrir la página (no pide cámara). Al pulsar, normalmente ya está lista.
-let configuracion = null;
+// La configuración se pide en cuanto carga la página
 const configuracionPromesa = cargarConfiguracion();
-configuracionPromesa.then((cfg) => { configuracion = cfg; }).catch(() => {}); // el error se gestiona al pulsar
 
 // ---------- Eventos ----------
-$('btn-iniciar').addEventListener('click', iniciarExperiencia);
-$('btn-sin-camara').addEventListener('click', () => irSinCamara());
 $('btn-sin-camara-error').addEventListener('click', () => irSinCamara());
 // Recargar la página es la forma más fiable de liberar cámara y escena en iOS/Android
 $('btn-reintentar').addEventListener('click', () => location.reload());
 $('btn-volver-inicio').addEventListener('click', () => { location.href = location.pathname; });
+$('btn-sonido').addEventListener('click', activarSonido);
+// Cualquier toque en la pantalla también activa el sonido
+document.addEventListener('pointerdown', activarSonido);
 
-// ---------- Arranque ----------
+// ---------- Arranque: sin botón, la experiencia se abre sola ----------
 if (MODO_SIN_CAMARA) {
   mostrarSinCamara();
+} else {
+  arrancar().catch(mostrarError);
 }
 
 // ---------- Flujo principal ----------
-function iniciarExperiencia() {
-  mostrarCarga('Comprobando el dispositivo…');
-  // IMPORTANTE (iOS): desbloquear los vídeos debe hacerse dentro del gesto del usuario,
-  // de forma síncrona, ANTES de cualquier "await". Por eso se crean aquí si la configuración ya está lista.
-  let medios = [];
-  if (configuracion) {
-    medios = crearMediosVideo(configuracion);
-    desbloquearVideos(medios);
-  }
-  arrancar(medios).catch(mostrarError);
-}
-
-async function arrancar(medios) {
-  const cfg = await configuracionPromesa;
-  // Caso límite: la configuración no estaba lista en el clic. Los vídeos se crean ahora,
-  // y en iOS el desbloqueo puede no funcionar; el resto de la experiencia sigue igual.
-  if (medios.length === 0 && cfg.posters.some((p) => p.tipo === 'video')) {
-    medios = crearMediosVideo(cfg);
-    desbloquearVideos(medios);
-  }
+// Todo lo que no depende entre sí va en paralelo: mientras el usuario acepta el permiso
+// de cámara, ya se descargan la configuración, el archivo de targets y los vídeos.
+async function arrancar() {
   comprobarCompatibilidad();
 
-  mostrarCarga('Esperando permiso de cámara…');
-  await pedirPermisoCamara();
+  // Los vídeos se crean en cuanto llega la configuración, para que empiecen a descargarse ya
+  const mediosPromesa = configuracionPromesa.then((cfg) => {
+    medios = crearMediosVideo(cfg);
+    return medios;
+  });
 
-  mostrarCarga('Cargando reconocimiento y animaciones…');
-  await precargarAssets(cfg, medios);
+  const [cfg] = await Promise.all([
+    configuracionPromesa,
+    pedirPermisoCamara(),
+    comprobarTargets(),
+    mediosPromesa,
+  ]);
+
+  mostrarCarga('Preparando el reconocimiento…');
+  await cargarImagenes(cfg);
 
   crearEscena(cfg, medios);
 }
@@ -223,8 +222,8 @@ function traducirErrorCamara(err) {
 }
 
 // ---------- Vídeos ----------
-// Crea un <video> por poster de tipo "video". Empiezan silenciados (requisito de autoplay).
-// Se llama desde el clic para que el desbloqueo de iOS ocurra dentro del gesto del usuario.
+// Crea un <video> por poster de tipo "video". Empiezan silenciados: así el navegador
+// permite reproducirlos sin que el usuario toque nada (regla de autoplay de iOS y Android).
 function crearMediosVideo(cfg) {
   const contenedor = $('medios');
   return cfg.posters.filter((p) => p.tipo === 'video').map((p) => {
@@ -232,45 +231,47 @@ function crearMediosVideo(cfg) {
     video.id = `video-${p.id}`;
     video.src = p.ruta;
     video.loop = p.loop !== false;
-    video.muted = true;        // se habilita el audio tras el toque del botón de inicio
+    video.muted = true;        // el audio se activa con el primer toque (activarSonido)
     video.playsInline = true;  // iOS: reproducir dentro de la página, no a pantalla completa
     video.preload = 'auto';
+    video.addEventListener('error', () => {
+      console.error('[Posters AR]', 'No se pudo cargar el vídeo', p.ruta);
+    });
     contenedor.appendChild(video);
+    calentarVideo(p, video);
     return { poster: p, video };
   });
 }
 
-// Dentro del gesto del usuario: intenta reproducir con sonido y pausa.
-// Así el navegador permite reproducir después (con audio) cuando aparezca el poster.
-// Si el navegador lo rechaza, el vídeo se queda silenciado.
-function desbloquearVideos(medios) {
-  medios.forEach(({ video }) => {
-    video.muted = false;
-    const promesa = video.play();
-    if (promesa) {
-      promesa
-        .then(() => video.pause())
-        .catch(() => {
-          video.muted = true;
-        });
-    }
-  });
+// iOS ignora preload="auto": un play() silenciado seguido de pause() obliga a descargar
+// y decodificar el primer fotograma. Así el vídeo aparece al instante al detectar el poster.
+function calentarVideo(poster, video) {
+  const promesa = video.play();
+  if (!promesa) return;
+  promesa
+    .then(() => { if (!postersVisibles.has(poster.id)) video.pause(); })
+    .catch(() => {});
 }
 
-// Espera a que el vídeo tenga datos suficientes (o falla con error claro)
-function esperarVideo(video) {
-  return new Promise((resolver, rechazar) => {
-    if (video.readyState >= 2) return resolver();
+// Primer toque del usuario: quita el silencio de los vídeos. Debe ocurrir dentro del gesto.
+// En iOS, play() con sonido dentro del toque "desbloquea" cada vídeo para más adelante.
+function activarSonido() {
+  if (sonidoActivado || medios.length === 0) return;
+  sonidoActivado = true;
+  $('btn-sonido').hidden = true;
+  document.removeEventListener('pointerdown', activarSonido);
 
-    const limite = setTimeout(() => rechazar(errorApp('ASSETS', `timeout ${video.id}`)), 20000);
-    video.addEventListener('loadeddata', () => {
-      clearTimeout(limite);
-      resolver();
-    }, { once: true });
-    video.addEventListener('error', () => {
-      clearTimeout(limite);
-      rechazar(errorApp('ASSETS', `error de vídeo ${video.id}`));
-    }, { once: true });
+  medios.forEach(({ poster, video }) => {
+    video.muted = false;
+    const promesa = video.play();
+    if (!promesa) return;
+    promesa
+      .then(() => { if (!postersVisibles.has(poster.id)) video.pause(); })
+      .catch(() => {
+        // El navegador no dejó usar el audio: el vídeo sigue, pero silenciado
+        video.muted = true;
+        if (postersVisibles.has(poster.id)) video.play().catch(() => {});
+      });
   });
 }
 
@@ -285,10 +286,13 @@ function cargarImagen(ruta) {
 }
 
 // ---------- Carga de assets ----------
-// Lo que se carga al inicio: targets, vídeos e imágenes de los posters.
+// Antes de crear la escena solo se comprueba el archivo de targets y se cargan las imágenes.
+// Los vídeos NO se esperan: se descargan en paralelo y el plano se ajusta cuando llegan.
 // Los modelos GLB (pesados) se cargan más tarde, al detectar su poster.
-async function precargarAssets(configuracion, medios) {
-  // 1) El archivo de targets: que exista y que no sea el placeholder sin generar
+
+// Comprueba que targets.mind exista y no sea el placeholder sin generar.
+// Se lee el archivo completo: queda en la caché del navegador y MindAR lo reutiliza.
+async function comprobarTargets() {
   let respuesta;
   try {
     respuesta = await fetch(AJUSTES.rutaTargets);
@@ -302,11 +306,10 @@ async function precargarAssets(configuracion, medios) {
   if (cabecera === 'PLACEHOLDER') {
     throw errorApp('TARGETS_PLACEHOLDER');
   }
+}
 
-  // 2) Vídeos: esperamos a que tengan datos antes de crear la escena
-  await Promise.all(medios.map(({ video }) => esperarVideo(video)));
-
-  // 3) Imágenes: guardamos sus dimensiones para la proporción del plano
+// Imágenes (tipo "image"): guardamos sus dimensiones para la proporción del plano
+async function cargarImagenes(configuracion) {
   await Promise.all(configuracion.posters
     .filter((p) => p.tipo === 'image')
     .map(async (p) => { p._dimensiones = await cargarImagen(p.ruta); }));
@@ -360,6 +363,9 @@ function crearEscena(configuracion, medios) {
   escena.addEventListener('arReady', () => {
     clearTimeout(temporizadorAr);
     ocultarCarga();
+    asegurarVideoCamara();
+    $('capa-ar').hidden = false;
+    $('btn-sonido').hidden = sonidoActivado || medios.length === 0;
   });
   escena.addEventListener('arError', (evento) => {
     clearTimeout(temporizadorAr);
@@ -391,6 +397,18 @@ function crearPoster(poster, video) {
   ancla.id = `ancla-${poster.id}`;
   ancla.setAttribute('mindar-image-target', { targetIndex: poster.targetIndex });
 
+  // Visibilidad común a todos los tipos: aviso de escaneo y registro de depuración
+  ancla.addEventListener('targetFound', () => {
+    postersVisibles.add(poster.id);
+    registrarDeteccion(poster, 'encontrado');
+    actualizarAvisoEscaneo();
+  });
+  ancla.addEventListener('targetLost', () => {
+    postersVisibles.delete(poster.id);
+    registrarDeteccion(poster, 'perdido');
+    actualizarAvisoEscaneo();
+  });
+
   if (poster.tipo === 'video') {
     crearContenidoVideo(ancla, poster, video);
   } else if (poster.tipo === 'image') {
@@ -404,29 +422,51 @@ function crearPoster(poster, video) {
 
 // Vídeo: plano con la proporción real del vídeo, fade al aparecer, pausa al perder el poster
 function crearContenidoVideo(ancla, poster, video) {
-  const proporcion = video.videoHeight / video.videoWidth;
-
   const plano = document.createElement('a-video');
   plano.setAttribute('src', `#video-${poster.id}`);
   plano.setAttribute('width', poster.escala);
-  plano.setAttribute('height', poster.escala * proporcion);
   plano.setAttribute('position', poster.posicion);
   plano.setAttribute('rotation', poster.rotacion);
   plano.setAttribute('material', { transparent: true, opacity: 0 });
   anadirFundido(plano);
 
+  // Proporción real del vídeo. Si aún no llegaron sus datos, se usa la del poster (4:5)
+  // y se corrige en cuanto el navegador conoce el tamaño del vídeo.
+  const ajustarAlto = () => {
+    plano.setAttribute('height', poster.escala * (video.videoHeight / video.videoWidth));
+  };
+  if (video.readyState >= 1 && video.videoWidth > 0) {
+    ajustarAlto();
+  } else {
+    plano.setAttribute('height', poster.escala * PROPORCION_POSTER);
+    video.addEventListener('loadedmetadata', ajustarAlto, { once: true });
+  }
+
   ancla.addEventListener('targetFound', () => {
-    registrarDeteccion(poster, 'encontrado');
     video.play().catch(() => {});
     plano.emit('mostrar');
   });
   ancla.addEventListener('targetLost', () => {
-    registrarDeteccion(poster, 'perdido');
     plano.emit('ocultar');
     video.pause();
   });
 
   ancla.appendChild(plano);
+}
+
+// Salvaguarda: MindAR confía en el autoplay de su <video> de cámara. Si el navegador lo dejó
+// en pausa, sin imagen no hay reconocimiento: lo reanudamos (y lo reintentamos en el primer toque).
+function asegurarVideoCamara() {
+  const camara = $('contenedor-ar').querySelector(':scope > video');
+  if (!camara || !camara.paused) return;
+  camara.play().catch(() => {
+    document.addEventListener('pointerdown', () => camara.play().catch(() => {}), { once: true });
+  });
+}
+
+// Muestra "Apunta la cámara a un poster" solo cuando no se ve ninguno
+function actualizarAvisoEscaneo() {
+  $('aviso-escaneo').hidden = postersVisibles.size > 0;
 }
 
 // Modo debug: registra cada detección y pérdida con su hora, para medir la estabilidad en el móvil
@@ -472,7 +512,7 @@ function crearContenidoModelo(ancla, poster) {
 
 // Fade de entrada y salida, disparado por eventos "mostrar" y "ocultar"
 function anadirFundido(elemento) {
-  const duracionEntrada = MOVIMIENTO_REDUCIDO ? 0 : 400;
+  const duracionEntrada = MOVIMIENTO_REDUCIDO ? 0 : 200;
   const duracionSalida = MOVIMIENTO_REDUCIDO ? 0 : 300;
   elemento.setAttribute('animation__entrada', {
     property: 'material.opacity',
@@ -524,13 +564,12 @@ function anadirAnimacion(elemento, poster) {
 
 // ---------- Modo sin cámara ----------
 // Muestra cada poster con su imagen original y su vídeo, sin AR.
-// Se abre con ?modo=sin-camara o desde los botones de inicio y de error.
+// Se abre con ?modo=sin-camara o desde el botón de la pantalla de error.
 function irSinCamara() {
   location.href = `${location.pathname}?modo=sin-camara`;
 }
 
 async function mostrarSinCamara() {
-  $('pantalla-inicio').hidden = true;
   mostrarCarga('Cargando los posters…');
   let configuracion;
   try {
@@ -586,7 +625,6 @@ function crearTarjetaSinCamara(poster) {
 // ---------- Interfaz ----------
 function mostrarCarga(texto) {
   $('texto-carga').textContent = texto;
-  $('pantalla-inicio').hidden = true;
   $('estado-error').hidden = true;
   $('estado-carga').hidden = false;
 }
@@ -600,8 +638,8 @@ function mostrarError(err) {
   console.error('[Posters AR]', codigo, err);
   $('texto-error').textContent = MENSAJES[codigo] || MENSAJES.GENERICO;
   $('btn-sin-camara-error').hidden = !CODIGOS_SIN_CAMARA.includes(codigo);
-  $('pantalla-inicio').hidden = true;
   $('estado-carga').hidden = true;
+  $('capa-ar').hidden = true;
   $('estado-error').hidden = false;
 }
 

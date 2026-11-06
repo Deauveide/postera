@@ -17,15 +17,16 @@ Web de realidad aumentada: el usuario apunta la cámara a un poster impreso y ap
 ## Estructura
 
 ```
-index.html                 Pantalla de inicio, estados de carga/error, contenedores
+index.html                 Estados de carga/error, capa sobre la cámara, contenedores (sin pantalla de inicio)
 css/styles.css             Estilos (tokens de color en :root)
 js/app.js                  Arranque, permisos, carga, escena y eventos
 js/posters.json            Configuración de posters y filtros de MindAR (ver sección abajo)
 vendor/                    A-Frame y MindAR (+ licenses/)
-assets/targets/targets.mind  Targets compilados de TODOS los posters (PLACEHOLDER hasta generar el real)
+assets/targets/targets.mind  Targets compilados de TODOS los posters (poster-1 = 0, poster-2 = 1)
 assets/<poster>/           Todo el contenido de UN poster (ver convención abajo)
-assets/poster-1/           Poster 1 (primer poster real)
-assets/poster-prueba/      Poster y vídeo de prueba de la Fase 1
+assets/poster-1/           Poster 1 · Museo Nazional
+assets/poster-2/           Poster 2 · Una idea libre
+assets/_originales/        Originales pesados tal como llegaron (ignorado por git, no se publica)
 docs/                      Documentación del proyecto (artículo de investigación en .docx)
 README.md                  Uso, pruebas, compilación de targets y despliegue
 CLAUDE.md                  Este archivo
@@ -39,17 +40,18 @@ CLAUDE.md                  Este archivo
 - Las rutas de `posters.json` apuntan a esta carpeta.
 - Las carpetas de posters no se mueven ni se renombran sin actualizar `posters.json` y el `targets.mind`.
 
-Estado actual de `assets/poster-1/`:
+Estado actual (2026-11-06). Los dos posters usan tipo `video`:
 
-| Archivo | Original | Uso previsto |
+| Archivo | Original (en `assets/_originales/`) | Uso |
 |---|---|---|
-| `poster.jpg` | Poster Objetivo Nazional (4500×5626, 4:5) | Imagen para compilar el target |
-| `modelo.glb` | Sharp V3 · Multi View · Highest 3D model (originalmente 59 MB, ahora 2,9 MB) | Modelo (tipo `model`). **No tiene animaciones**: ver nota abajo |
-| `texto-nazi.png` | Texto nazi (2209×672) | Imagen animada (tipo `image`) |
-| `fenismo.png` | fenismo (1024×1024) | Imagen animada (tipo `image`) |
-| `lgbtiq.png` | lgbtiq+ (1024×1024) | Imagen animada (tipo `image`) |
+| `poster-1/poster.jpg` | `Poster Objetivo Nazional .jpg.jpeg` (4500×5626) | Target y modo sin cámara. 1080×1350 |
+| `poster-1/video.mp4` | `Video RA 1.mp4` (1080×1440, 21 s, 22 MB) | Animación. 720×960 (3:4), 2,9 MB |
+| `poster-2/poster.jpg` | `Pieza Grafica RA 2_Mesa de trabajo 1 copia.png` (4500×5625, transparencia → fondo blanco) | Target y modo sin cámara. 1080×1350 |
+| `poster-2/video.mp4` | `Video RA 2.mp4` (1080×1350, 15 s, 26 MB) | Animación. 720×900 (4:5), 2,0 MB |
+| `poster-1/modelo.glb`, `fenismo.png`, `lgbtiq.png` | Material anterior | **Sin usar** en `posters.json` |
 
-El uso de cada archivo en la animación lo define `posters.json`: estos usos son una suposición hasta confirmarlo.
+- **Vídeos** recodificados con ffmpeg: H.264 High, 720 px de ancho, CRF 25, keyframe cada 30 fotogramas, AAC 128 kbps y `+faststart` (el índice va al principio: el vídeo empieza a reproducirse sin descargarlo entero).
+- El vídeo del poster 1 es 3:4 y el poster 4:5: con `escala: 1` sobresale un poco por arriba y por abajo (se respeta la proporción real).
 
 ### Optimización de `modelo.glb` (59 MB → 2,9 MB)
 
@@ -81,7 +83,7 @@ El uso de cada archivo en la animación lo define `posters.json`: estos usos son
 
 ## Modos y depuración
 
-- **Sin cámara:** `?modo=sin-camara` (también desde los botones de inicio y de error). Muestra cada poster con su imagen y su vídeo.
+- **Sin cámara:** `?modo=sin-camara` (también desde el botón de la pantalla de error). Muestra cada poster con su imagen y su vídeo.
 - **Debug:** `?debug=1` muestra el FPS de A-Frame (`<a-scene stats>`) y registra en consola cada detección y pérdida con su hora.
 - **No usar `showStats` de MindAR:** en 1.2.5 necesita una variable global `Stats` que el bundle no incluye, y la escena no llega a arrancar.
 - **`prefers-reduced-motion`:** se desactivan los fades largos y las animaciones en bucle de `image`.
@@ -89,11 +91,17 @@ El uso de cada archivo en la animación lo define `posters.json`: estos usos son
 ## Decisiones tomadas (Fase 1)
 
 - **Un solo `targets.mind`** para todos los posters. El orden del array en `posters.json` debe coincidir con `targetIndex`.
-- **Cámara bajo demanda:** nada de cámara hasta pulsar "Iniciar experiencia". Se pide permiso con `getUserMedia`, se cierra ese stream y MindAR abre el suyo. Así podemos distinguir "permiso denegado" de otros fallos.
-- **Vídeo y audio:** el vídeo arranca silenciado (`muted` + `playsInline`). Dentro del toque del botón se hace un `play()` con sonido y `pause()` para desbloquear el audio en iOS. Si el navegador lo rechaza, el vídeo queda silenciado. **Verificar en iOS real.**
+- **Arranque automático (2026-11-06, sustituye a "cámara bajo demanda"):** no hay botón "Iniciar experiencia". Al cargar la página se pide la cámara. En paralelo se descargan `posters.json`, `targets.mind` y los vídeos (`arrancar()` usa `Promise.all`). Se pide permiso con `getUserMedia`, se cierra ese stream y MindAR abre el suyo: así distinguimos "permiso denegado" de otros fallos.
+- **Vídeo y audio:** los vídeos arrancan silenciados (`muted` + `playsInline`), que es lo que permite reproducirlos sin un toque. Cada vídeo se "calienta" al crearlo (`play()` + `pause()` silenciado) porque iOS ignora `preload="auto"`: así el primer fotograma ya está decodificado al detectar el poster. El sonido se activa con el primer toque en cualquier parte o con el botón "Activar sonido" (`activarSonido()`). **Verificar en iOS real.**
+- **Vídeos no bloquean el arranque:** la escena se crea sin esperar a los vídeos. El plano usa la proporción 4:5 del poster hasta que llega `loadedmetadata`, y entonces se ajusta a la del vídeo.
+- **Salvaguarda de la cámara:** al disparar `arReady`, si el `<video>` de cámara de MindAR está en pausa (autoplay bloqueado) se llama a `play()`, y si falla se reintenta en el primer toque.
+- **Aviso de escaneo:** "Apunta la cámara a un poster" se ve solo cuando no hay ningún poster detectado (nuestra UI; la de MindAR está desactivada).
 - **Proporción:** el plano del vídeo usa la proporción real del vídeo (`videoHeight / videoWidth`), no se deforma.
 - **Escala:** 1 unidad de A-Frame = ancho del poster (así lo muestran los ejemplos de MindAR). **Confirmar en la prueba** con un poster real.
-- **Transiciones:** al encontrar el poster, fade-in de 400 ms y `play()`. Al perderlo, fade-out de 300 ms y `pause()`.
+- **Transiciones:** al encontrar el poster, fade-in de 200 ms y `play()`. Al perderlo, fade-out de 300 ms y `pause()`.
+- **`warmupTolerance: 2`** (por defecto MindAR usa 5): el poster se muestra tras 2 fotogramas detectados en vez de 5. Si aparecen detecciones falsas, volver a `-1`.
+- **Compilación de targets:** desde los `poster.jpg` de 1080×1350 (no desde los originales de 4500 px), con el compilador de `mind-ar` 1.2.5 en el navegador. 1,27 MB para los dos posters.
+- **Prueba verificada (2026-11-06):** Chrome headless con cámara falsa (`--use-file-for-fake-video-capture` con los dos posters): la AR queda lista en ~5 s, cada poster se detecta en < 1 s y su vídeo se reproduce al detectarlo y se pausa al perderlo. Falta probar en móviles reales.
 - **UI nativa de MindAR desactivada** (`uiLoading`, `uiScanning`, `uiError` = `no`). Usamos nuestras pantallas.
 - **`<a-camera>` obligatoria:** MindAR busca un `<a-camera>` dentro de la escena para ajustar el campo de visión (`_resize`). Sin ella, `arReady` nunca se dispara y la app se queda en la carga hasta el timeout. Está en `crearEscena()`.
 - **Filtrado MindAR** en `CONFIG.filtro` de `app.js`: `filterMinCF = 0.001`, `filterBeta = 1000` (valores por defecto de MindAR, documentados allí).
@@ -101,8 +109,7 @@ El uso de cada archivo en la animación lo define `posters.json`: estos usos son
 - **Renderer:** un solo renderer, sin antialias, `alpha: true`, `precision: medium` (no `mediump`), pixel ratio máximo 2. Sin sombras ni luces en Fase 1.
 - **Recargar la página** es el "reintentar" del error: es la forma más fiable de liberar cámara y escena en iOS/Android.
 - **Formato de los posters:** 1080×1350 px (proporción **4:5**). Impresión tamaño carta recortada; puede haber impresiones mayores (SuperB) con la misma proporción. Como la escala es relativa al ancho del poster, el tamaño impreso no cambia la configuración.
-- **Test de Fase 1:** `assets/poster-prueba/video.mp4` (H.264, 720×900 = 4:5, 8 s, muted) y `assets/poster-prueba/poster.png` (1080×1350, generado para pruebas). Ninguno es el contenido final.
-- **Número de posters:** unos 6. Empezar con `maxTrack: 1`; revisar si hace falta más al probar.
+- **Número de posters:** unos 6 (2 listos). Empezar con `maxTrack: 1`; revisar si hace falta más al probar.
 
 ## Convenciones de código
 
@@ -127,7 +134,7 @@ Comprobar que los archivos clave responden:
 ```bash
 curl -I http://localhost:3000/vendor/aframe-1.8.0.min.js
 curl -I http://localhost:3000/assets/targets/targets.mind
-curl -I -H "Range: bytes=0-1023" http://localhost:3000/assets/poster-prueba/video.mp4   # debe devolver 206
+curl -I -H "Range: bytes=0-1023" http://localhost:3000/assets/poster-1/video.mp4   # debe devolver 206
 ```
 
 Comprobar la versión de las librerías en npm (antes de actualizar):
@@ -139,10 +146,10 @@ npm view mind-ar version
 
 ## Pendiente
 
-- **Posters 2 a 6:** añadir cada uno a `posters.json` cuando estén sus assets y su target compilado (el `.mind` se compila con todos, en el orden de `targetIndex`).
+- **Posters 3 a 6:** añadir cada uno a `posters.json` cuando estén sus assets y su target compilado (el `.mind` se compila con todos, en el orden de `targetIndex`).
+- **Probar en iOS y Android reales:** arranque sin botón, sonido con el primer toque y velocidad de detección con los posters impresos.
 - **Fase 3:** overlays "Ver más" y pulido visual.
 - **Medición (punto 7 de la lista de mejoras):** no implementada. Antes hay que definir qué se mide, con quién y con consentimiento.
 - **Fase 3:** mensajes de error completos, overlays "Ver más", pulido visual.
 - **Fase 4:** optimización de peso, README final y guía de despliegue (GitHub Pages y WordPress con iframe `allow="camera; autoplay"`).
-- **targets.mind real:** el archivo actual es un PLACEHOLDER. El usuario debe generarlo con sus imágenes reales (ver README).
 - Script Node para compilar targets: **no verificado**. El paquete trae `offline-compiler.js`, pero depende de `canvas` y TensorFlow.js. Evaluar en Fase 4.

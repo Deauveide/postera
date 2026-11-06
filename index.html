@@ -13,9 +13,9 @@
 </head>
 <body>
 
-  <!-- ============ Pantalla de inicio ============
-       La cámara NO se activa hasta que el usuario pulsa el botón. -->
-  <main id="pantalla-inicio" class="pantalla">
+  <!-- ============ Estado de carga ============
+       No hay pantalla de inicio: la cámara se abre en cuanto carga la página. -->
+  <div id="estado-carga" class="pantalla" role="status" aria-live="polite">
     <div class="tarjeta">
       <!-- Texto alternativo del icono decorativo para lectores de pantalla -->
       <svg class="icono" viewBox="0 0 64 64" role="img" aria-label="Icono de un poster con una marca de realidad aumentada">
@@ -23,23 +23,16 @@
         <path d="M24 30 L30 36 L42 24" fill="none" stroke="#ffb84d" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
         <circle cx="32" cy="46" r="2.5" fill="#ffb84d"/>
       </svg>
-
-      <h1>Posters animados</h1>
-      <p>Pulsa el botón, permite el acceso a la cámara y apunta a un poster impreso para ver su animación.</p>
-
-      <button id="btn-iniciar" class="boton-principal" type="button">Iniciar experiencia</button>
-      <button id="btn-sin-camara" class="boton-secundario" type="button">Ver los posters sin cámara</button>
-
-      <p class="nota">Necesitas HTTPS, una cámara y Safari en iOS o Chrome en Android.</p>
-    </div>
-  </main>
-
-  <!-- ============ Estado de carga ============ -->
-  <div id="estado-carga" class="pantalla" role="status" aria-live="polite" hidden>
-    <div class="tarjeta">
       <div class="spinner" aria-hidden="true"></div>
-      <p id="texto-carga">Preparando la cámara…</p>
+      <p id="texto-carga">Abriendo la cámara…</p>
+      <p class="nota">Si el navegador lo pide, permite el acceso a la cámara.</p>
     </div>
+  </div>
+
+  <!-- ============ Sobre la cámara (visible cuando la AR está lista) ============ -->
+  <div id="capa-ar" hidden>
+    <p id="aviso-escaneo" class="aviso-escaneo" role="status">Apunta la cámara a un poster</p>
+    <button id="btn-sonido" class="boton-principal boton-sonido" type="button" hidden>Activar sonido</button>
   </div>
 
   <!-- ============ Estado de error ============ -->
@@ -57,9 +50,9 @@
   <main id="modo-sin-camara" class="pantalla pantalla-scroll" hidden>
     <div class="contenido-scroll">
       <h1>Posters sin cámara</h1>
-      <p>Así se ven los posters. Para ver la animación sobre el poster impreso, vuelve al inicio y usa la cámara.</p>
+      <p>Así se ven los posters. Para ver la animación sobre el poster impreso, usa la cámara.</p>
       <div id="lista-sin-camara" class="lista-sin-camara"></div>
-      <button id="btn-volver-inicio" class="boton-secundario" type="button">Volver al inicio</button>
+      <button id="btn-volver-inicio" class="boton-secundario" type="button">Usar la cámara</button>
     </div>
   </main>
 
