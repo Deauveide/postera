@@ -1,0 +1,65 @@
+{
+  "proporcion": 1.3794392523364487,
+  "capas": [
+    {
+      "nombre": "toldo",
+      "archivo": "capas/toldo.png",
+      "z": 0.05,
+      "inicio": 0.35,
+      "x": 0.05607,
+      "y": 0.39907,
+      "ancho": 0.73832,
+      "alto": 0.43178
+    },
+    {
+      "nombre": "letrero",
+      "archivo": "capas/letrero.png",
+      "z": 0.09,
+      "inicio": 0.65,
+      "x": 0.05794,
+      "y": 0.17757,
+      "ancho": 0.14393,
+      "alto": 0.18692
+    },
+    {
+      "nombre": "flecha",
+      "archivo": "capas/flecha.png",
+      "z": 0.094,
+      "inicio": 0.65,
+      "x": 0.06262,
+      "y": 0.22804,
+      "ancho": 0.08598,
+      "alto": 0.0486
+    },
+    {
+      "nombre": "mujer",
+      "archivo": "capas/mujer.png",
+      "z": 0.13,
+      "inicio": 0.95,
+      "x": 0.27009,
+      "y": -0.05701,
+      "ancho": 0.31028,
+      "alto": 0.61121
+    },
+    {
+      "nombre": "leon",
+      "archivo": "capas/leon.png",
+      "z": 0.19,
+      "inicio": 1.25,
+      "x": -0.05234,
+      "y": -0.25327,
+      "ancho": 0.52897,
+      "alto": 0.61495
+    },
+    {
+      "nombre": "rosas",
+      "archivo": "capas/rosas.png",
+      "z": 0.26,
+      "inicio": 1.55,
+      "x": 0.24206,
+      "y": -0.41589,
+      "ancho": 0.37009,
+      "alto": 0.29346
+    }
+  ]
+}
