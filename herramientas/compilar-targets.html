@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Compilar targets</title>
+  <style>
+    body { margin: 0; padding: 24px 16px; font-family: system-ui, sans-serif; background: #0f1222; color: #f2f2f2; }
+    button { min-height: 52px; padding: 0 20px; border: 0; border-radius: 8px; background: #ffb84d; color: #0f1222; font-size: 16px; cursor: pointer; }
+    #estado { white-space: pre-line; }
+  </style>
+  <script src="../vendor/mindar-image-aframe-1.2.5.prod.js"></script>
+</head>
+<body>
+  <h1>Compilar targets.mind</h1>
+  <p>Compila las imágenes (<code>imagen</code>) de todos los posters de <code>js/posters.json</code>, en el orden de <code>targetIndex</code>, y descarga <code>targets.mind</code>. Cópialo a <code>assets/targets/</code>.</p>
+  <button id="compilar" type="button">Compilar y descargar</button>
+  <p id="estado" role="status"></p>
+
+  <script>
+    const estado = document.getElementById('estado');
+
+    function cargarImagen(url) {
+      return new Promise((ok, ko) => {
+        const img = new Image();
+        img.onload = () => ok(img);
+        img.onerror = () => ko(new Error(`No se pudo cargar ${url}`));
+        img.src = url;
+      });
+    }
+
+    // Devuelve el archivo compilado como ArrayBuffer (también lo usa la automatización con Playwright)
+    async function compilarTargets() {
+      const cfg = await fetch('../js/posters.json').then((r) => r.json());
+      const posters = [...cfg.posters].sort((a, b) => a.targetIndex - b.targetIndex);
+      posters.forEach((p, i) => {
+        if (p.targetIndex !== i) throw new Error(`Falta el targetIndex ${i}`);
+      });
+      estado.textContent = `Cargando ${posters.length} imágenes…`;
+      const imagenes = await Promise.all(posters.map((p) => cargarImagen(`../${p.imagen}`)));
+      const compilador = new window.MINDAR.IMAGE.Compiler();
+      await compilador.compileImageTargets(imagenes, (avance) => {
+        estado.textContent = `Compilando… ${Math.round(avance)} %`;
+      });
+      const datos = await compilador.exportData();
+      estado.textContent = `Listo: ${posters.map((p) => `${p.targetIndex} = ${p.id}`).join(', ')}`;
+      return datos;
+    }
+
+    document.getElementById('compilar').addEventListener('click', async () => {
+      try {
+        const datos = await compilarTargets();
+        const enlace = document.createElement('a');
+        enlace.href = URL.createObjectURL(new Blob([datos]));
+        enlace.download = 'targets.mind';
+        enlace.click();
+      } catch (err) {
+        estado.textContent = `Error: ${err.message}`;
+      }
+    });
+  </script>
+</body>
+</html>

@@ -62,7 +62,11 @@ Reglas:
 - El **orden** de compilación debe coincidir con `targetIndex` de cada poster en la configuración. El poster 0 es el primero que subas, el 1 el segundo, y así.
 - Usa imágenes con mucho detalle y contraste. Las superficies lisas o repetitivas se detectan mal.
 
-### (a) Herramienta web oficial de MindAR (recomendada)
+### (0) Herramienta local (la más rápida)
+
+Con el servidor en marcha, abre `http://localhost:3000/herramientas/compilar-targets.html` y pulsa **Compilar y descargar**. Lee `js/posters.json` y compila las imágenes en el orden de `targetIndex`. Copia el `targets.mind` descargado a `assets/targets/`.
+
+### (a) Herramienta web oficial de MindAR
 
 1. Abre la herramienta de compilación: <https://hiukim.github.io/mind-ar-js-doc/tools/compile>
 2. Sube las imágenes de los posters **en el orden indicado**.
@@ -89,6 +93,7 @@ El paquete `mind-ar` incluye `src/image-target/offline-compiler.js`, que en prin
 
 - `/` — la experiencia con cámara arranca sola. El sonido se activa con el primer toque o con el botón "Activar sonido".
 - `/?modo=sin-camara` — los posters sin cámara (imagen y vídeo).
+- `/herramientas/postal-roldanillo/vista-previa.html` — la escena 3D de la postal Cartas del Alma sin cámara.
 - `/?debug=1` — muestra los FPS y registra en consola cada detección y pérdida con su hora.
 
 ## Despliegue

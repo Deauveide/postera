@@ -16,3 +16,6 @@ node_modules/
 
 # Originales pesados de los posters (no se publican; las versiones web están en assets/<poster>/)
 assets/_originales/
+
+# Imágenes de control del script de capas
+herramientas/postal-roldanillo/debug/

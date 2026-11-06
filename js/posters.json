@@ -32,6 +32,18 @@
       "rotacion": "0 0 0",
       "loop": true,
       "animacion": "ninguna"
+    },
+    {
+      "id": "poster-3",
+      "targetIndex": 2,
+      "titulo": "Postal 3 · Cartas del Alma · Roldanillo",
+      "imagen": "assets/poster-3/poster.jpg",
+      "tipo": "escena",
+      "componente": "escena-cartas-del-alma",
+      "ruta": "assets/poster-3/",
+      "escala": 1,
+      "posicion": "0 0 0",
+      "rotacion": "0 0 0"
     }
   ]
 }

@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Vista previa · Cartas del Alma</title>
+  <style>
+    html, body { margin: 0; height: 100%; background: #1d1a17; font-family: system-ui, sans-serif; }
+    .controles { position: fixed; left: 16px; bottom: 16px; z-index: 10; display: flex; gap: 8px; flex-wrap: wrap; }
+    button { min-height: 44px; padding: 0 16px; border: 0; border-radius: 8px; background: #b5121b; color: #fff; font-size: 15px; cursor: pointer; }
+    button.sec { background: #f5efe2; color: #1d1a17; }
+    p.nota { position: fixed; top: 12px; left: 16px; right: 16px; margin: 0; color: #f5efe2; font-size: 14px; opacity: .8; z-index: 10; }
+  </style>
+  <script src="../../vendor/aframe-1.8.0.min.js"></script>
+  <script src="../../js/escenas/cartas-del-alma.js"></script>
+</head>
+<body>
+  <p class="nota">Vista previa sin cámara: la postal gira sola para mostrar la profundidad. Arrastra para mirar.</p>
+  <div class="controles">
+    <button id="repetir" type="button">Repetir animación</button>
+    <button id="girar" class="sec" type="button">Pausar giro</button>
+  </div>
+
+  <a-scene renderer="antialias: true; colorManagement: true" background="color: #1d1a17" vr-mode-ui="enabled: false">
+    <a-entity position="0 0.2 1.75"><a-camera position="0 0 0" look-controls="enabled: true" wasd-controls="enabled: false"></a-camera></a-entity>
+    <!-- Mismo montaje que en la AR: la escena es hija del ancla de MindAR (aquí, un pivote que gira) -->
+    <a-entity id="pivote" animation="property: rotation; from: -6 -28 0; to: -6 28 0; dir: alternate; dur: 5000; easing: easeInOutSine; loop: true">
+      <a-entity id="postal" escena-cartas-del-alma="ruta: ../../assets/poster-3/"></a-entity>
+    </a-entity>
+  </a-scene>
+
+  <script>
+    const postal = document.getElementById('postal');
+    const pivote = document.getElementById('pivote');
+    const escena = document.querySelector('a-scene');
+    const iniciar = () => postal.emit('mostrar');
+    if (escena.hasLoaded) iniciar(); else escena.addEventListener('loaded', iniciar);
+
+    document.getElementById('repetir').addEventListener('click', () => {
+      postal.emit('ocultar');
+      postal.components['escena-cartas-del-alma'].perdidoEn = -1e9;   // fuerza la intro
+      postal.emit('mostrar');
+    });
+    let girando = true;
+    document.getElementById('girar').addEventListener('click', (e) => {
+      girando = !girando;
+      pivote.components.animation[girando ? 'play' : 'pause']();
+      e.target.textContent = girando ? 'Pausar giro' : 'Reanudar giro';
+    });
+  </script>
+</body>
+</html>

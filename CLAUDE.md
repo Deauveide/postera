@@ -21,11 +21,14 @@ index.html                 Estados de carga/error, capa sobre la cámara, conten
 css/styles.css             Estilos (tokens de color en :root)
 js/app.js                  Arranque, permisos, carga, escena y eventos
 js/posters.json            Configuración de posters y filtros de MindAR (ver sección abajo)
+js/escenas/                Escenas en código (tipo "escena"): un componente A-Frame/Three.js por archivo
+herramientas/              compilar-targets.html (compila targets.mind) y postal-roldanillo/ (capas + vista previa)
 vendor/                    A-Frame y MindAR (+ licenses/)
-assets/targets/targets.mind  Targets compilados de TODOS los posters (poster-1 = 0, poster-2 = 1)
+assets/targets/targets.mind  Targets compilados de TODOS los posters (poster-1 = 0, poster-2 = 1, poster-3 = 2)
 assets/<poster>/           Todo el contenido de UN poster (ver convención abajo)
 assets/poster-1/           Poster 1 · Museo Nazional
 assets/poster-2/           Poster 2 · Una idea libre
+assets/poster-3/           Postal 3 · Cartas del Alma · Roldanillo (escena Three.js)
 assets/_originales/        Originales pesados tal como llegaron (ignorado por git, no se publica)
 docs/                      Documentación del proyecto (artículo de investigación en .docx)
 README.md                  Uso, pruebas, compilación de targets y despliegue
@@ -62,6 +65,15 @@ Estado actual (2026-11-06). Los dos posters usan tipo `video`:
 - **Descartado:** `quantize` sin meshopt pesa 11 MB al 25 %, mucho más que meshopt.
 - **Pendiente:** el modelo no tiene animación. Si el poster necesita animación, hay que crearla en el DCC y reexportar, o decidir una animación en código (rotación, flotación) para tipo `model`. Confirmar con el usuario.
 
+## Postal 3 · Cartas del Alma (tipo `escena`, 2026-11-06)
+
+- Sello "Roldanillo 2026" de la Asamblea Popular, proyecto **Cartas del Alma**. Original: `assets/_originales/poster-3/postal-roldanillo.jpg` (535×738, baja resolución) y `logo-cartas-del-alma.jpg`.
+- **Postal pop-up** (`js/escenas/cartas-del-alma.js`, componente `escena-cartas-del-alma`): el fondo limpio tapa la postal impresa; toldo, letrero (+ flecha), mujer, león y rosas se despegan y suben a alturas distintas (0,05–0,26) con rebote y sombra; luego brotan pétalos (InstancedMesh), la flecha se desliza y el logotipo "Cartas del Alma" entra extruido en 3D sobre el borde superior. Intro ≈ 3,6 s y después bucle. La intro se repite si el poster estuvo perdido más de 6 s. Con `prefers-reduced-motion` salta la intro y no hay bucle.
+- **Capas recortadas del JPG plano** con `herramientas/postal-roldanillo/preparar_capas.py` (color + polígono por elemento). Genera `capas/*.png`, `capas/base.jpg`, `capas.json` y `logo.json` (contornos vectorizados del logotipo). **Pendiente:** el usuario tiene el archivo por capas; cuando llegue, sustituir los PNG (mismos nombres) o adaptar el script, y rehacer `base.jpg` con el fondo real.
+- **Vista previa sin cámara:** `http://localhost:3000/herramientas/postal-roldanillo/vista-previa.html`.
+- **targets.mind recompilado (2026-11-06)** con los tres posters usando `herramientas/compilar-targets.html` (compilador de MindAR 1.2.5 en el navegador, lee `posters.json`). 1,9 MB. Verificado en Chrome headless con cámara falsa: poster-1, poster-2 y poster-3 se detectan. Falta probar la postal impresa en móviles reales.
+- El target de la postal se compiló desde el JPG de 535 px. Si se imprime desde un archivo de más resolución, recompilar con esa imagen (misma proporción).
+
 ## Contexto del proyecto
 
 - `docs/` contiene el artículo de investigación *"Diferencias en la efectividad comunicativa entre un póster convencional y uno que incorpora realidad aumentada"* (Institución Universitaria de Roldanillo, UNINTEP). Compara un póster estático con uno con RA, con un grupo focal de estudiantes.
@@ -78,6 +90,7 @@ Estado actual (2026-11-06). Los dos posters usan tipo `video`:
 - Tipos:
   - `video`: vídeo H.264 con fade y pausa al perder el poster.
   - `image`: PNG con transparencia; `flotar` o `pulsar` en bucle.
+  - `escena`: animación programada en Three.js. Campo extra `componente` (nombre del componente A-Frame, registrado en `js/escenas/` y cargado con `<script>` en `index.html`). `ruta` es la carpeta de sus datos. El componente recibe los eventos `mostrar` / `ocultar` y lleva su propia línea de tiempo.
   - `model`: GLB. Se carga la primera vez que aparece el poster. Reproduce todos sus clips en bucle con el componente `reproducir-clips` (A-Frame 1.8 no trae `animation-mixer`).
 - `js/app.js` valida la configuración al arrancar. Un error de validación muestra un aviso y lista los campos en la consola.
 

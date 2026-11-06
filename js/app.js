@@ -13,7 +13,7 @@ const AJUSTES = {
   tiempoLimiteArMs: 30000,
 };
 
-const TIPOS = ['video', 'image', 'model'];
+const TIPOS = ['video', 'image', 'model', 'escena'];
 const ANIMACIONES = ['ninguna', 'flotar', 'pulsar'];
 const MOVIMIENTO_REDUCIDO = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 // Alto/ancho de los posters (1080×1350 = 4:5). Solo se usa mientras llega el tamaño real del vídeo.
@@ -168,7 +168,10 @@ function validarConfiguracion(cfg) {
     }
     indices.add(p.targetIndex);
 
-    if (!TIPOS.includes(p.tipo)) errores.push(`${etiqueta}.tipo debe ser video, image o model`);
+    if (!TIPOS.includes(p.tipo)) errores.push(`${etiqueta}.tipo debe ser video, image, model o escena`);
+    if (p.tipo === 'escena' && !(window.AFRAME && AFRAME.components[p.componente])) {
+      errores.push(`${etiqueta}.componente no está registrado (¿falta su <script> en index.html?)`);
+    }
     if (typeof p.ruta !== 'string' || p.ruta === '') errores.push(`${etiqueta}.ruta es obligatoria`);
     if (typeof p.escala !== 'number' || p.escala <= 0) errores.push(`${etiqueta}.escala debe ser un número mayor que 0`);
     if (typeof p.posicion !== 'string' || typeof p.rotacion !== 'string') {
@@ -415,6 +418,8 @@ function crearPoster(poster, video) {
     crearContenidoImagen(ancla, poster);
   } else if (poster.tipo === 'model') {
     crearContenidoModelo(ancla, poster);
+  } else if (poster.tipo === 'escena') {
+    crearContenidoEscena(ancla, poster);
   }
 
   return ancla;
@@ -508,6 +513,22 @@ function crearContenidoModelo(ancla, poster) {
     modelo.setAttribute('reproducir-clips', '');
     ancla.appendChild(modelo);
   });
+}
+
+// Escena en código (Three.js): un componente de A-Frame registrado en js/escenas/.
+// Se crea al arrancar (así descarga sus texturas antes de detectar el poster) y recibe
+// "mostrar" / "ocultar" al encontrar o perder el poster; el componente lleva su propia animación.
+function crearContenidoEscena(ancla, poster) {
+  const escena = document.createElement('a-entity');
+  escena.setAttribute(poster.componente, { ruta: poster.ruta });
+  escena.setAttribute('scale', `${poster.escala} ${poster.escala} ${poster.escala}`);
+  escena.setAttribute('position', poster.posicion);
+  escena.setAttribute('rotation', poster.rotacion);
+
+  ancla.addEventListener('targetFound', () => escena.emit('mostrar'));
+  ancla.addEventListener('targetLost', () => escena.emit('ocultar'));
+
+  ancla.appendChild(escena);
 }
 
 // Fade de entrada y salida, disparado por eventos "mostrar" y "ocultar"
